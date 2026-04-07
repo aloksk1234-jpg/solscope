@@ -48,10 +48,16 @@ export function analyzePortfolio(
     if (isNFT(asset)) {
       // Parse NFT
       const collectionGrouping = asset.grouping?.find((g) => g.group_key === "collection");
+      const image = asset.content?.links?.image;
+      const nftName = asset.content?.metadata?.name ?? "Unknown NFT";
+
+      // Spam filter: skip NFTs with no image and no recognizable name
+      if (!image && nftName === "Unknown NFT") continue;
+
       nfts.push({
         mint: asset.id,
-        name: asset.content?.metadata?.name ?? "Unknown NFT",
-        image: asset.content?.links?.image,
+        name: nftName,
+        image,
         collection: collectionGrouping?.group_value
           ? undefined
           : undefined,
@@ -78,6 +84,9 @@ export function analyzePortfolio(
       const jupPrice = prices[asset.id];
       const priceUsd = heliusPrice ?? jupPrice ?? 0;
       const usdValue = balance * priceUsd;
+
+      // Spam filter: skip unknown tokens with negligible value
+      if (!known && usdValue < 0.01) continue;
 
       tokens.push({
         mint: asset.id,

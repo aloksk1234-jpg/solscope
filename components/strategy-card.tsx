@@ -12,27 +12,71 @@ interface StrategyCardProps {
   index?: number;
 }
 
-/* ── Protocol → emoji + gradient mapping ── */
-const PROTOCOL_STYLE: Record<string, { emoji: string; bg: string; dot: string }> = {
-  kamino:   { emoji: "🏦", bg: "linear-gradient(135deg,#0a1628,#0f2440)", dot: "#6190FA" },
-  marinade: { emoji: "🥩", bg: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", dot: "#14F195" },
-  jito:     { emoji: "🐢", bg: "linear-gradient(135deg,#0a2818,#143d22)", dot: "#00D9BB" },
-  orca:     { emoji: "🌊", bg: "linear-gradient(135deg,#2a1a0a,#3d2a14)", dot: "#FAC238" },
-  raydium:  { emoji: "⚡", bg: "linear-gradient(135deg,#1a0a2e,#2d1b0e)", dot: "#9945FF" },
-  meteora:  { emoji: "⚡", bg: "linear-gradient(135deg,#1a0a2e,#0a1e3d)", dot: "#9945FF" },
-  drift:    { emoji: "💰", bg: "linear-gradient(135deg,#2e0a0a,#4a1414)", dot: "#FA6666" },
-  solend:   { emoji: "💎", bg: "linear-gradient(135deg,#0a1a2e,#1a2e4a)", dot: "#6190FA" },
-  mango:    { emoji: "🥭", bg: "linear-gradient(135deg,#2a1a0a,#4a2e0a)", dot: "#FAC238" },
-  tensor:   { emoji: "🔷", bg: "linear-gradient(135deg,#0a1a2e,#0a2e3d)", dot: "#6190FA" },
+/* ── Protocol slug → bg gradient + dot color ── */
+const PROTOCOL_THEME: Record<string, { bg: string; dot: string }> = {
+  kamino:   { bg: "linear-gradient(135deg,#0a1628,#0f2440)", dot: "#6190FA" },
+  marinade: { bg: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", dot: "#14F195" },
+  jito:     { bg: "linear-gradient(135deg,#0a2818,#143d22)", dot: "#00D9BB" },
+  orca:     { bg: "linear-gradient(135deg,#2a1a0a,#3d2a14)", dot: "#FAC238" },
+  raydium:  { bg: "linear-gradient(135deg,#1a0a2e,#2d1b0e)", dot: "#9945FF" },
+  meteora:  { bg: "linear-gradient(135deg,#1a0a2e,#0a1e3d)", dot: "#9945FF" },
+  drift:    { bg: "linear-gradient(135deg,#2e0a0a,#4a1414)", dot: "#FA6666" },
+  solend:   { bg: "linear-gradient(135deg,#0a1a2e,#1a2e4a)", dot: "#6190FA" },
+  mango:    { bg: "linear-gradient(135deg,#2a1a0a,#4a2e0a)", dot: "#FAC238" },
+  jupiter:  { bg: "linear-gradient(135deg,#0a1e3d,#0a2818)", dot: "#06B6D4" },
+  sanctum:  { bg: "linear-gradient(135deg,#1a0a2e,#2e1a0a)", dot: "#9945FF" },
+  blazestake: { bg: "linear-gradient(135deg,#0a2818,#1a3d0a)", dot: "#14F195" },
 };
 
-function getProtocolStyle(name: string) {
-  const key = name.toLowerCase().split(" ")[0];
-  return PROTOCOL_STYLE[key] ?? {
-    emoji: ["🏛️","🔮","💫","🌟","⚡","🎯"][name.charCodeAt(0) % 6],
+function getProtocolStyle(slug: string) {
+  // slug is the exact DeFiLlama project slug e.g. "kamino-lend", "jito-liquid-staking"
+  const prefix = slug.toLowerCase().split("-")[0];
+  const theme = PROTOCOL_THEME[slug.toLowerCase()] ?? PROTOCOL_THEME[prefix] ?? {
     bg: "linear-gradient(135deg,#141621,#1a1c29)",
     dot: "#9945FF",
   };
+  // Fallback logo using the short prefix slug (e.g. "kamino" not "kamino-lend")
+  const shortSlug = slug.toLowerCase().split("-")[0];
+  return {
+    logo: `https://icons.llama.fi/${shortSlug}.jpg`,
+    fallback: slug.charAt(0).toUpperCase(),
+    ...theme,
+  };
+}
+
+function ProtocolLogo({ src, fallback, dot }: { src: string; fallback: string; dot: string }) {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [failed, setFailed] = useState(false);
+
+  const handleError = () => {
+    // Try .png extension if .jpg failed
+    if (imgSrc.endsWith(".jpg")) {
+      setImgSrc(imgSrc.replace(".jpg", ".png"));
+    } else {
+      setFailed(true);
+    }
+  };
+
+  if (failed) {
+    return (
+      <div
+        className="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-black select-none"
+        style={{ background: `${dot}22`, color: dot, border: `2px solid ${dot}44` }}
+      >
+        {fallback}
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={imgSrc}
+      alt={fallback}
+      className="w-20 h-20 rounded-2xl object-cover"
+      style={{ border: "2px solid rgba(255,255,255,0.08)" }}
+      onError={handleError}
+    />
+  );
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -60,6 +104,8 @@ export default function StrategyCard({ strategy, index = 0 }: StrategyCardProps)
   const [open, setOpen] = useState(false);
   const tierColor = TIER_COLORS[strategy.riskTier] ?? "#94a3b8";
   const ps = getProtocolStyle(strategy.protocol);
+  // Prefer the per-pool logo from strategy engine (same slug, same CDN), fallback to style-derived
+  const logoSrc = strategy.protocolLogoUrl ?? ps.logo;
 
   return (
     <motion.div
@@ -79,9 +125,7 @@ export default function StrategyCard({ strategy, index = 0 }: StrategyCardProps)
           className="absolute top-0 left-0 right-0 h-0.5"
           style={{ background: "var(--gradient-sol)" }}
         />
-        <span className="text-6xl animate-float select-none" role="img">
-          {ps.emoji}
-        </span>
+        <ProtocolLogo src={logoSrc} fallback={ps.fallback} dot={ps.dot} />
         {/* APY badge floating top-right */}
         <div
           className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-sm font-black"

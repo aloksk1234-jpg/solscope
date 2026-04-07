@@ -92,6 +92,7 @@ export default async function AirdropsPage({
       id: airdrop.id,
       project: airdrop.project,
       logoColor: airdrop.logoColor,
+      logoUrl: airdrop.logoUrl,
       description: airdrop.description,
       status: airdrop.status,
       estimatedDate: airdrop.estimatedDate,
@@ -198,8 +199,8 @@ export default async function AirdropsPage({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {airdropsWithEligibility.map(({ airdrop, evaluatedCriteria }) => (
-            <AirdropCard key={airdrop.id} airdrop={airdrop} evaluatedCriteria={evaluatedCriteria} />
+          {airdropsWithEligibility.map(({ airdrop, evaluatedCriteria }, i) => (
+            <AirdropCard key={airdrop.id} airdrop={airdrop} evaluatedCriteria={evaluatedCriteria} index={i} />
           ))}
         </div>
       </div>

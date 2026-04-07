@@ -1,11 +1,52 @@
 import type { YieldPool } from "@/types";
 
 const DEFILLAMA_YIELDS_URL = "https://yields.llama.fi/pools";
+const DEFILLAMA_PROTOCOLS_URL = "https://api.llama.fi/protocols";
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// Module-level in-memory cache
+// ── Pools cache ──
 let cachedPools: YieldPool[] | null = null;
 let cacheTimestamp = 0;
+
+// ── Protocol info cache ──
+export interface ProtocolInfo {
+  url: string;
+  logo: string;
+}
+
+let cachedProtocolInfo: Record<string, ProtocolInfo> | null = null;
+let protocolCacheTimestamp = 0;
+
+export async function fetchProtocolInfo(): Promise<Record<string, ProtocolInfo>> {
+  if (cachedProtocolInfo !== null && Date.now() - protocolCacheTimestamp < TTL_MS) {
+    return cachedProtocolInfo;
+  }
+
+  try {
+    const response = await fetch(DEFILLAMA_PROTOCOLS_URL, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!response.ok) return cachedProtocolInfo ?? {};
+
+    const protocols: Array<{ slug?: string; url?: string; logo?: string }> =
+      await response.json();
+
+    const map: Record<string, ProtocolInfo> = {};
+    for (const p of protocols) {
+      if (p.slug) {
+        map[p.slug] = { url: p.url ?? "", logo: p.logo ?? "" };
+      }
+    }
+
+    cachedProtocolInfo = map;
+    protocolCacheTimestamp = Date.now();
+    return map;
+  } catch {
+    return cachedProtocolInfo ?? {};
+  }
+}
 
 export async function fetchSolanaYields(): Promise<YieldPool[]> {
   // Return cached result if within TTL

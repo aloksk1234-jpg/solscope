@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { Portfolio, YieldPool } from "@/types";
+import { Search, ChevronDown, X } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -80,6 +81,10 @@ function computeProjection(
 export default function WhatIfSimulator({ portfolio }: WhatIfSimulatorProps) {
   const [yieldPools, setYieldPools] = useState<YieldPool[]>([]);
   const [loadingYields, setLoadingYields] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tierFilter, setTierFilter] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Build asset options
   const assetOptions = useMemo<AssetOption[]>(() => {
@@ -171,6 +176,32 @@ export default function WhatIfSimulator({ portfolio }: WhatIfSimulatorProps) {
       : 0;
 
   const monthlyEarnings = projectionMonths > 0 ? earnings / projectionMonths : 0;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filtered yield options for custom dropdown
+  const filteredYieldOptions = useMemo(() => {
+    return yieldOptions.filter((opt) => {
+      if (tierFilter && opt.riskTier !== tierFilter) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return (
+          opt.protocol.toLowerCase().includes(q) ||
+          opt.symbol.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [yieldOptions, tierFilter, searchQuery]);
 
   // Group yields by tier for grouped select
   const tierGroups = RISK_TIERS.map((tier) => ({
@@ -269,37 +300,140 @@ export default function WhatIfSimulator({ portfolio }: WhatIfSimulatorProps) {
               ))}
             </div>
           ) : (
-            <select
-              value={selectedYieldId}
-              onChange={(e) => setSelectedYieldId(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
-              style={{
-                background: "var(--card)",
-                borderColor: "var(--card-border)",
-                color: "var(--foreground)",
-              }}
-            >
-              <option value="" style={{ background: "#0d1526" }}>
-                — Select a strategy —
-              </option>
-              {tierGroups.map((group) => (
-                <optgroup
-                  key={group.tier}
-                  label={`── ${group.label} ──`}
-                  style={{ background: "#0d1526", color: TIER_COLORS[group.tier] }}
+            <div ref={dropdownRef} className="relative">
+              {/* Trigger button */}
+              <button
+                type="button"
+                onClick={() => setDropdownOpen((p) => !p)}
+                className="w-full px-3 py-2.5 rounded-lg border text-sm flex items-center justify-between gap-2 transition-colors"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  borderColor: dropdownOpen ? "var(--accent)" : "var(--card-border)",
+                  color: selectedYield ? "var(--foreground)" : "var(--muted-foreground)",
+                }}
+              >
+                <span className="truncate">
+                  {selectedYield
+                    ? `${selectedYield.protocol} · ${selectedYield.symbol} · ${selectedYield.apy.toFixed(1)}%`
+                    : "Select a strategy…"}
+                </span>
+                <ChevronDown
+                  className="w-4 h-4 flex-shrink-0 transition-transform"
+                  style={{
+                    transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    color: "var(--muted-foreground)",
+                  }}
+                />
+              </button>
+
+              {/* Dropdown panel */}
+              {dropdownOpen && (
+                <div
+                  className="absolute z-50 left-0 right-0 mt-1 rounded-xl border shadow-xl overflow-hidden"
+                  style={{ background: "#1A1C29", borderColor: "var(--card-border)" }}
                 >
-                  {group.options.map((opt) => (
-                    <option
-                      key={opt.id}
-                      value={opt.id}
-                      style={{ background: "#0d1526", color: "#e2e8f0" }}
+                  {/* Search input */}
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 border-b"
+                    style={{ borderColor: "var(--card-border)" }}
+                  >
+                    <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--muted-foreground)" }} />
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Search protocol or token…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1 text-sm outline-none bg-transparent"
+                      style={{ color: "var(--foreground)" }}
+                    />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery("")}>
+                        <X className="w-3.5 h-3.5" style={{ color: "var(--muted-foreground)" }} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Risk tier filter pills */}
+                  <div
+                    className="flex gap-1.5 px-3 py-2 border-b overflow-x-auto"
+                    style={{ borderColor: "var(--card-border)" }}
+                  >
+                    <button
+                      onClick={() => setTierFilter(null)}
+                      className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 transition-all"
+                      style={{
+                        background: tierFilter === null ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
+                        color: tierFilter === null ? "var(--foreground)" : "var(--muted-foreground)",
+                      }}
                     >
-                      {opt.protocol} · {opt.symbol} · {opt.apy.toFixed(1)}%
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+                      All
+                    </button>
+                    {RISK_TIERS.map((tier) => (
+                      <button
+                        key={tier}
+                        onClick={() => setTierFilter(tierFilter === tier ? null : tier)}
+                        className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 transition-all"
+                        style={{
+                          background: tierFilter === tier ? `${TIER_COLORS[tier]}22` : "rgba(255,255,255,0.04)",
+                          color: tierFilter === tier ? TIER_COLORS[tier] : "var(--muted-foreground)",
+                          border: `1px solid ${tierFilter === tier ? TIER_COLORS[tier] : "transparent"}`,
+                        }}
+                      >
+                        {TIER_LABELS[tier]}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Options list */}
+                  <div className="max-h-52 overflow-y-auto">
+                    {filteredYieldOptions.length === 0 ? (
+                      <p className="px-3 py-4 text-sm text-center" style={{ color: "var(--muted-foreground)" }}>
+                        No strategies match your search.
+                      </p>
+                    ) : (
+                      filteredYieldOptions.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedYieldId(opt.id);
+                            setDropdownOpen(false);
+                            setSearchQuery("");
+                          }}
+                          className="w-full px-3 py-2.5 flex items-center justify-between gap-2 text-sm transition-colors hover:bg-white/[0.04] text-left"
+                          style={{
+                            background: selectedYieldId === opt.id ? "rgba(0,212,170,0.06)" : "transparent",
+                          }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium" style={{ color: "var(--foreground)" }}>
+                              {opt.protocol}
+                            </span>
+                            <span className="mx-1.5" style={{ color: "var(--muted)" }}>·</span>
+                            <span style={{ color: "var(--muted-foreground)" }}>{opt.symbol}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                              style={{
+                                background: `${TIER_COLORS[opt.riskTier]}18`,
+                                color: TIER_COLORS[opt.riskTier],
+                              }}
+                            >
+                              {TIER_LABELS[opt.riskTier]}
+                            </span>
+                            <span className="font-mono font-bold text-xs" style={{ color: TIER_COLORS[opt.riskTier] }}>
+                              {opt.apy.toFixed(1)}%
+                            </span>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {selectedYield && (

@@ -70,6 +70,8 @@ export interface Strategy {
   /** Primary non-SOL token mint address, used for Bags swap integration */
   primaryTokenMint?: string;
   matchReason?: string;
+  /** Override protocol logo URL (e.g. from DefiLlama) */
+  protocolLogoUrl?: string;
 }
 
 export interface HealthScore {

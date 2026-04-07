@@ -1,6 +1,5 @@
 import type { Portfolio, YieldPool, Strategy, RiskTier } from "@/types";
 import { DEFI_PROTOCOLS, SYMBOL_TO_MINT } from "./constants";
-
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 
 /** Given a pool symbol like "USDC-SOL" or "mSOL", return the primary non-SOL token mint */
@@ -63,21 +62,50 @@ function categorizePool(pool: YieldPool): RiskTier {
   return "aggressive";
 }
 
-function getProtocolUrl(project: string, poolUrl?: string): string {
+/**
+ * Resolve a yield pool's project slug to a { url, logoUrl } using:
+ *  1. DeFiLlama protocols list (exact slug match)
+ *  2. Progressive prefix trimming ("kamino-lend" → "kamino")
+ *  3. First-segment scan ("marinade-liquid-staking" → finds "marinade-finance")
+ *  4. Static DEFI_PROTOCOLS fallback
+ */
+function resolveProtocol(
+  project: string,
+  protocolMap: Record<string, { url: string; logo: string }>
+): { url: string; logoUrl: string } {
   const lowerProject = project.toLowerCase();
-  if (poolUrl) return poolUrl;
+  const parts = lowerProject.split("-");
 
-  const known = DEFI_PROTOCOLS[lowerProject];
-  if (known) return known.url;
+  // 1. Exact match
+  const exact = protocolMap[lowerProject];
+  if (exact?.url) return { url: exact.url, logoUrl: exact.logo };
 
-  // Generate a best-guess URL
-  return `https://defillama.com/protocol/${lowerProject}`;
+  // 2. Progressive prefix: "kamino-lend" → try "kamino"
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const prefix = parts.slice(0, i).join("-");
+    const hit = protocolMap[prefix];
+    if (hit?.url) return { url: hit.url, logoUrl: hit.logo };
+  }
+
+  // 3. First-segment scan: "marinade-liquid-staking" first segment "marinade"
+  //    finds "marinade-finance" whose slug starts with "marinade"
+  const firstSeg = parts[0];
+  for (const [slug, info] of Object.entries(protocolMap)) {
+    if (slug.startsWith(firstSeg) && info.url) {
+      return { url: info.url, logoUrl: info.logo };
+    }
+  }
+
+  // 4. Static fallback (covers any protocol not in the live API)
+  const staticKnown = DEFI_PROTOCOLS[lowerProject];
+  if (staticKnown) return { url: staticKnown.url, logoUrl: "" };
+
+  return { url: "", logoUrl: "" };
 }
 
-function buildSteps(pool: YieldPool, portfolio: Portfolio): string[] {
+function buildSteps(pool: YieldPool, _portfolio: Portfolio, protocolUrl: string): string[] {
   const project = pool.project;
   const symbol = pool.symbol;
-  const protocolUrl = getProtocolUrl(pool.project, pool.url);
 
   const steps: string[] = [];
 
@@ -165,7 +193,8 @@ function buildMatchReason(pool: YieldPool, portfolio: Portfolio): string {
 
 export function getStrategyRecommendations(
   portfolio: Portfolio,
-  pools: YieldPool[]
+  pools: YieldPool[],
+  protocolMap: Record<string, { url: string; logo: string }> = {}
 ): Record<RiskTier, Strategy[]> {
   const tiers: Record<RiskTier, Strategy[]> = {
     conservative: [],
@@ -197,8 +226,8 @@ export function getStrategyRecommendations(
   for (const { pool, tier, score: _score } of categorized) {
     if (tiers[tier].length >= 5) continue;
 
-    const protocolUrl = getProtocolUrl(pool.project, pool.url);
-    const steps = buildSteps(pool, portfolio);
+    const { url: protocolUrl, logoUrl: protocolLogoUrl } = resolveProtocol(pool.project, protocolMap);
+    const steps = buildSteps(pool, portfolio, protocolUrl);
     const riskFactors = buildRiskFactors(pool, tier);
     const matchReason = buildMatchReason(pool, portfolio);
 
@@ -209,6 +238,7 @@ export function getStrategyRecommendations(
       id: pool.pool,
       protocol: pool.project,
       protocolUrl,
+      protocolLogoUrl,
       title: `${pool.symbol} on ${pool.project}`,
       description: `Earn ${pool.apy.toFixed(1)}% APY by providing liquidity to the ${pool.symbol} pool on ${pool.project}. TVL: $${(pool.tvlUsd / 1_000_000).toFixed(1)}M.`,
       apy: pool.apy,

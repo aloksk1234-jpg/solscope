@@ -1,24 +1,27 @@
 "use client";
 
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ExternalLink, ChevronDown, ArrowLeftRight, ArrowUpRight, Image, TrendingUp, TrendingDown, HelpCircle } from "lucide-react";
 import type { EnhancedTransaction } from "@/lib/helius-transactions";
 
 interface TransactionTimelineProps {
   transactions: EnhancedTransaction[];
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  SWAP: "#3B82F6",
-  TRANSFER: "#94a3b8",
-  NFT_SALE: "#F59E0B",
-  NFT_BID: "#F59E0B",
-  NFT_LISTING: "#F59E0B",
-  STAKE: "#00D4AA",
-  UNSTAKE: "#00D4AA",
-  UNKNOWN: "#4a6080",
+const TYPE_META: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
+  SWAP:        { color: "#3B82F6", label: "Swap",        icon: <ArrowLeftRight className="w-3.5 h-3.5" /> },
+  TRANSFER:    { color: "#94a3b8", label: "Transfer",    icon: <ArrowUpRight className="w-3.5 h-3.5" /> },
+  NFT_SALE:    { color: "#F59E0B", label: "NFT Sale",    icon: <Image className="w-3.5 h-3.5" /> },
+  NFT_BID:     { color: "#F59E0B", label: "NFT Bid",     icon: <Image className="w-3.5 h-3.5" /> },
+  NFT_LISTING: { color: "#F59E0B", label: "NFT List",    icon: <Image className="w-3.5 h-3.5" /> },
+  STAKE:       { color: "#00D4AA", label: "Stake",       icon: <TrendingUp className="w-3.5 h-3.5" /> },
+  UNSTAKE:     { color: "#00D4AA", label: "Unstake",     icon: <TrendingDown className="w-3.5 h-3.5" /> },
+  UNKNOWN:     { color: "#4a6080", label: "Unknown",     icon: <HelpCircle className="w-3.5 h-3.5" /> },
 };
 
-function getTypeColor(type: string): string {
-  return TYPE_COLORS[type] ?? TYPE_COLORS.UNKNOWN;
+function getTypeMeta(type: string) {
+  return TYPE_META[type] ?? TYPE_META.UNKNOWN;
 }
 
 function formatTimestamp(ts: number): string {
@@ -42,7 +45,6 @@ function getDateLabel(ts: number): string {
 
   if (txDate.getTime() === today.getTime()) return "Today";
   if (txDate.getTime() === yesterday.getTime()) return "Yesterday";
-
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -50,14 +52,11 @@ function getDateLabel(ts: number): string {
   });
 }
 
-// Group transactions by date
 function groupByDate(transactions: EnhancedTransaction[]): Map<string, EnhancedTransaction[]> {
   const groups = new Map<string, EnhancedTransaction[]>();
   for (const tx of transactions) {
     const label = getDateLabel(tx.timestamp);
-    if (!groups.has(label)) {
-      groups.set(label, []);
-    }
+    if (!groups.has(label)) groups.set(label, []);
     groups.get(label)!.push(tx);
   }
   return groups;
@@ -65,6 +64,157 @@ function groupByDate(transactions: EnhancedTransaction[]): Map<string, EnhancedT
 
 function truncateSig(sig: string): string {
   return `${sig.slice(0, 8)}...${sig.slice(-6)}`;
+}
+
+// Stats bar
+function StatsBar({ transactions }: { transactions: EnhancedTransaction[] }) {
+  const counts: Record<string, number> = {};
+  for (const tx of transactions) {
+    counts[tx.type] = (counts[tx.type] ?? 0) + 1;
+  }
+
+  const stats = [
+    { label: "Total", value: transactions.length, color: "var(--foreground)" },
+    { label: "Swaps", value: counts["SWAP"] ?? 0, color: "#3B82F6" },
+    { label: "Transfers", value: counts["TRANSFER"] ?? 0, color: "#94a3b8" },
+    { label: "NFT", value: (counts["NFT_SALE"] ?? 0) + (counts["NFT_BID"] ?? 0) + (counts["NFT_LISTING"] ?? 0), color: "#F59E0B" },
+    { label: "Staking", value: (counts["STAKE"] ?? 0) + (counts["UNSTAKE"] ?? 0), color: "#00D4AA" },
+  ];
+
+  return (
+    <div
+      className="grid grid-cols-5 gap-2 rounded-xl border p-4"
+      style={{ background: "var(--card)", borderColor: "var(--card-border)" }}
+    >
+      {stats.map((s) => (
+        <div key={s.label} className="text-center">
+          <p className="text-lg font-black" style={{ color: s.color }}>{s.value}</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{s.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TxRow({ tx, index }: { tx: EnhancedTransaction; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const meta = getTypeMeta(tx.type);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.03, ease: "easeOut" }}
+      className="rounded-xl border overflow-hidden transition-colors"
+      style={{ background: "var(--card)", borderColor: expanded ? meta.color + "44" : "var(--card-border)" }}
+    >
+      {/* Main row — clickable */}
+      <button
+        type="button"
+        onClick={() => setExpanded((p) => !p)}
+        className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors"
+      >
+        {/* Type icon bubble */}
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: `${meta.color}18`, color: meta.color }}
+        >
+          {meta.icon}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-semibold"
+              style={{ background: `${meta.color}18`, color: meta.color }}
+            >
+              {meta.label}
+            </span>
+            {tx.source && tx.source !== "UNKNOWN" && (
+              <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                via {tx.source}
+              </span>
+            )}
+          </div>
+          {tx.description && tx.description !== tx.type && (
+            <p className="text-sm mt-0.5 truncate" style={{ color: "var(--foreground)" }}>
+              {tx.description}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className="text-xs font-mono" style={{ color: "var(--muted-foreground)" }}>
+            {formatTimestamp(tx.timestamp)}
+          </span>
+          <ChevronDown
+            className="w-4 h-4 transition-transform"
+            style={{
+              color: "var(--muted-foreground)",
+              transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+            }}
+          />
+        </div>
+      </button>
+
+      {/* Expanded details */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div
+              className="px-4 py-3 space-y-2 border-t"
+              style={{ borderColor: "var(--card-border)", background: "rgba(255,255,255,0.015)" }}
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <p style={{ color: "var(--muted-foreground)" }}>Signature</p>
+                  <a
+                    href={`https://solscan.io/tx/${tx.signature}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono hover:opacity-70 transition-opacity flex items-center gap-1 mt-0.5"
+                    style={{ color: "var(--accent)" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {truncateSig(tx.signature)}
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <div>
+                  <p style={{ color: "var(--muted-foreground)" }}>Fee</p>
+                  <p className="font-mono mt-0.5" style={{ color: "var(--foreground)" }}>
+                    {formatFee(tx.fee)} SOL
+                  </p>
+                </div>
+                <div>
+                  <p style={{ color: "var(--muted-foreground)" }}>Time</p>
+                  <p className="font-mono mt-0.5" style={{ color: "var(--foreground)" }}>
+                    {new Date(tx.timestamp * 1000).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+              {tx.description && tx.description !== tx.type && (
+                <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                  {tx.description}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 }
 
 export default function TransactionTimeline({ transactions }: TransactionTimelineProps) {
@@ -85,6 +235,8 @@ export default function TransactionTimeline({ transactions }: TransactionTimelin
 
   return (
     <div className="space-y-6">
+      <StatsBar transactions={transactions} />
+
       {Array.from(groups.entries()).map(([dateLabel, txs]) => (
         <div key={dateLabel}>
           {/* Date label */}
@@ -95,87 +247,16 @@ export default function TransactionTimeline({ transactions }: TransactionTimelin
             >
               {dateLabel}
             </span>
-            <div
-              className="flex-1 h-px"
-              style={{ background: "var(--card-border)" }}
-            />
+            <div className="flex-1 h-px" style={{ background: "var(--card-border)" }} />
+            <span className="text-xs" style={{ color: "var(--muted)" }}>
+              {txs.length} tx{txs.length !== 1 ? "s" : ""}
+            </span>
           </div>
 
-          {/* Transactions */}
           <div className="space-y-2">
-            {txs.map((tx) => {
-              const typeColor = getTypeColor(tx.type);
-
-              return (
-                <div
-                  key={tx.signature}
-                  className="rounded-xl border p-4 flex items-start gap-3 hover:bg-white/[0.02] transition-colors"
-                  style={{ background: "var(--card)", borderColor: "var(--card-border)" }}
-                >
-                  {/* Timeline dot */}
-                  <div className="flex flex-col items-center pt-1">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ background: typeColor }}
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full font-medium"
-                          style={{
-                            background: `${typeColor}20`,
-                            color: typeColor,
-                          }}
-                        >
-                          {tx.type}
-                        </span>
-                        {tx.source && tx.source !== "UNKNOWN" && (
-                          <span
-                            className="text-xs"
-                            style={{ color: "var(--muted-foreground)" }}
-                          >
-                            via {tx.source}
-                          </span>
-                        )}
-                      </div>
-                      <span
-                        className="text-xs flex-shrink-0"
-                        style={{ color: "var(--muted-foreground)", fontFamily: "var(--font-mono)" }}
-                      >
-                        {formatTimestamp(tx.timestamp)}
-                      </span>
-                    </div>
-
-                    {tx.description && tx.description !== tx.type && (
-                      <p
-                        className="text-sm mt-1 line-clamp-2"
-                        style={{ color: "var(--foreground)" }}
-                      >
-                        {tx.description}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-4 mt-2">
-                      <a
-                        href={`https://solscan.io/tx/${tx.signature}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs hover:opacity-70 transition-opacity"
-                        style={{ color: "var(--accent)", fontFamily: "var(--font-mono)" }}
-                      >
-                        {truncateSig(tx.signature)}
-                      </a>
-                      <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                        Fee: {formatFee(tx.fee)} SOL
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {txs.map((tx, i) => (
+              <TxRow key={tx.signature} tx={tx} index={i} />
+            ))}
           </div>
         </div>
       ))}

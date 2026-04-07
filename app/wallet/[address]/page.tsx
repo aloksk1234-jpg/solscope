@@ -224,6 +224,36 @@ export default async function WalletPage({
         {/* Token table */}
         <TokenTable tokens={portfolio.tokens} />
 
+        {/* Strategies CTA */}
+        <Link
+          href={`/wallet/${address}/strategies`}
+          className="block rounded-2xl border overflow-hidden group transition-all duration-300 hover:border-[var(--sol-purple)] hover:shadow-[0_8px_32px_rgba(153,69,255,0.15)]"
+          style={{ background: "var(--card)", borderColor: "var(--card-border)" }}
+        >
+          <div className="p-5 flex items-center gap-5">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+              style={{ background: "linear-gradient(135deg,#9945FF22,#14F19522)" }}
+            >
+              💰
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-base" style={{ color: "var(--foreground)" }}>
+                DeFi Strategy Recommendations
+              </p>
+              <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                Personalized yield strategies based on your portfolio — live APY data from DefiLlama.
+              </p>
+            </div>
+            <div
+              className="px-4 py-2 rounded-xl text-sm font-bold flex-shrink-0 transition-all group-hover:opacity-90"
+              style={{ background: "var(--gradient-sol)", color: "#0F0F17" }}
+            >
+              View Strategies →
+            </div>
+          </div>
+        </Link>
+
         {/* DeFi Positions — between token table and NFT grid */}
         <DeFiPositions positions={defiPositions} />
 

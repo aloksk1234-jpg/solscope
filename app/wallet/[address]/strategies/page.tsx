@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getAssetsByOwner } from "@/lib/helius";
 import { getPrices } from "@/lib/jupiter";
 import { analyzePortfolio } from "@/lib/portfolio-analyzer";
-import { fetchSolanaYields } from "@/lib/defillama";
+import { fetchSolanaYields, fetchProtocolInfo } from "@/lib/defillama";
 import { getStrategyRecommendations } from "@/lib/strategy-engine";
 import { isValidSolanaAddress } from "@/lib/utils";
 import WalletHeader from "@/components/wallet-header";
@@ -32,9 +32,10 @@ export default async function StrategiesPage({ params }: { params: Promise<{ add
   let portfolio;
 
   try {
-    const [dasResponse, yields] = await Promise.all([
+    const [dasResponse, yields, protocolInfo] = await Promise.all([
       getAssetsByOwner(address),
       fetchSolanaYields(),
+      fetchProtocolInfo(),
     ]);
 
     const mintAddresses = dasResponse.items
@@ -43,7 +44,7 @@ export default async function StrategiesPage({ params }: { params: Promise<{ add
 
     const prices = await getPrices(mintAddresses);
     portfolio = analyzePortfolio(address, dasResponse, prices);
-    strategies = getStrategyRecommendations(portfolio, yields);
+    strategies = getStrategyRecommendations(portfolio, yields, protocolInfo);
   } catch (err) {
     fetchError = err instanceof Error ? err.message : "Failed to fetch data";
   }

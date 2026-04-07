@@ -4,6 +4,7 @@ export interface AirdropCriteria {
   id: string;
   project: string;
   logoColor: string;
+  logoUrl?: string;
   description: string;
   status: "upcoming" | "active" | "ended";
   estimatedDate?: string;
@@ -39,6 +40,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "solana-defi-activity",
     project: "Solana DeFi Activity",
     logoColor: "#9945FF",
+    logoUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
     description:
       "General DeFi participation reward for active Solana users with staked SOL positions.",
     status: "upcoming",
@@ -63,6 +65,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "active-trader",
     project: "Active Trader Rewards",
     logoColor: "#3B82F6",
+    logoUrl: "https://jup.ag/svg/jupiter-logo.svg",
     description:
       "Rewards for active Solana traders with diversified token portfolios worth over $100.",
     status: "upcoming",
@@ -87,6 +90,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "kamino",
     project: "Kamino Finance",
     logoColor: "#00D4AA",
+    logoUrl: "https://icons.llama.fi/icons/protocols/kamino.jpg",
     description:
       "Kamino protocol token airdrop for users who have deposited into Kamino lending vaults.",
     status: "upcoming",
@@ -111,6 +115,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "marinade",
     project: "Marinade Finance",
     logoColor: "#F59E0B",
+    logoUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So/logo.png",
     description:
       "MNDE token rewards for long-term mSOL holders and Marinade staking participants.",
     status: "active",
@@ -137,6 +142,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "jupiter",
     project: "Jupiter Exchange",
     logoColor: "#06B6D4",
+    logoUrl: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN/logo.png",
     description:
       "JUP token airdrop for Jupiter users holding JUP and participating in DAO governance.",
     status: "active",
@@ -163,6 +169,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "jito",
     project: "Jito Network",
     logoColor: "#EC4899",
+    logoUrl: "https://storage.googleapis.com/token-metadata/JitoSOL-200.png",
     description:
       "JTO governance token rewards for JitoSOL stakers contributing to MEV redistribution.",
     status: "active",
@@ -189,6 +196,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "bonk",
     project: "BONK Ecosystem",
     logoColor: "#F97316",
+    logoUrl: "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
     description:
       "BONK-related protocol rewards for holders participating in the BONK community ecosystem.",
     status: "upcoming",
@@ -216,6 +224,7 @@ export const AIRDROP_LIST: AirdropCriteria[] = [
     id: "nft-collector",
     project: "NFT Collector Rewards",
     logoColor: "#8B5CF6",
+    logoUrl: "https://magiceden.io/img/magic_eden_full_logo_colored.png",
     description:
       "Rewards for active Solana NFT collectors with diverse NFT portfolios.",
     status: "upcoming",

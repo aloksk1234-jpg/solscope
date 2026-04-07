@@ -72,66 +72,47 @@ export const KNOWN_TOKENS: Record<string, { name: string; symbol: string; logoUR
 };
 
 export const DEFI_PROTOCOLS: Record<string, { name: string; url: string; category: string }> = {
-  marinade: {
-    name: "Marinade Finance",
-    url: "https://marinade.finance",
-    category: "liquid-staking",
-  },
-  jito: {
-    name: "Jito",
-    url: "https://www.jito.network",
-    category: "liquid-staking",
-  },
-  sanctum: {
-    name: "Sanctum",
-    url: "https://app.sanctum.so",
-    category: "liquid-staking",
-  },
-  raydium: {
-    name: "Raydium",
-    url: "https://raydium.io",
-    category: "dex",
-  },
-  orca: {
-    name: "Orca",
-    url: "https://www.orca.so",
-    category: "dex",
-  },
-  jupiter: {
-    name: "Jupiter",
-    url: "https://jup.ag",
-    category: "aggregator",
-  },
-  kamino: {
-    name: "Kamino Finance",
-    url: "https://app.kamino.finance",
-    category: "lending",
-  },
-  marginfi: {
-    name: "MarginFi",
-    url: "https://app.marginfi.com",
-    category: "lending",
-  },
-  drift: {
-    name: "Drift Protocol",
-    url: "https://app.drift.trade",
-    category: "perps",
-  },
-  mango: {
-    name: "Mango Markets",
-    url: "https://app.mango.markets",
-    category: "lending",
-  },
-  solend: {
-    name: "Solend",
-    url: "https://solend.fi/dashboard",
-    category: "lending",
-  },
-  meteora: {
-    name: "Meteora",
-    url: "https://app.meteora.ag",
-    category: "dex",
-  },
+  // ── Liquid Staking ──
+  "jito-liquid-staking":      { name: "Jito",               url: "https://www.jito.network/staking/",        category: "liquid-staking" },
+  "marinade-liquid-staking":  { name: "Marinade Finance",   url: "https://marinade.finance/app/staking/",    category: "liquid-staking" },
+  "jupiter-staked-sol":       { name: "Jupiter",            url: "https://jup.ag",                           category: "liquid-staking" },
+  "drift-staked-sol":         { name: "Drift",              url: "https://app.drift.trade/earn",             category: "liquid-staking" },
+  "sanctum-infinity":         { name: "Sanctum",            url: "https://app.sanctum.so",                   category: "liquid-staking" },
+  "blazestake":               { name: "BlazeStake",         url: "https://stake.solblaze.org",               category: "liquid-staking" },
+  "jpool":                    { name: "JPool",              url: "https://jpool.one/",                       category: "liquid-staking" },
+  "helius-staked-sol":        { name: "Helius",             url: "https://www.helius.dev",                   category: "liquid-staking" },
+  "doublezero-staked-sol":    { name: "DoubleZero",         url: "https://doublezero.xyz",                   category: "liquid-staking" },
+  "phantom-sol":              { name: "Phantom",            url: "https://phantom.com",                      category: "liquid-staking" },
+  "the-vault-liquid-staking": { name: "The Vault",          url: "https://thevault.finance",                 category: "liquid-staking" },
+  "bybit-staked-sol":         { name: "Bybit",              url: "https://www.bybit.com",                    category: "liquid-staking" },
+  "stkesol-by-sol-strategies":{ name: "SOL Strategies",    url: "https://app.solstrategies.io",             category: "liquid-staking" },
+  jito:                       { name: "Jito",               url: "https://www.jito.network/staking/",        category: "liquid-staking" },
+  marinade:                   { name: "Marinade Finance",   url: "https://marinade.finance/app/staking/",    category: "liquid-staking" },
+  sanctum:                    { name: "Sanctum",            url: "https://app.sanctum.so",                   category: "liquid-staking" },
+
+  // ── Lending ──
+  "kamino-lend":              { name: "Kamino Finance",     url: "https://app.kamino.finance/lending",       category: "lending" },
+  "jupiter-lend":             { name: "Jupiter Lend",       url: "https://jup.ag/lending",                   category: "lending" },
+  "mango-v4":                 { name: "Mango Markets",      url: "https://app.mango.markets",                category: "lending" },
+  "drift-lending":            { name: "Drift",              url: "https://app.drift.trade/earn",             category: "lending" },
+  "save":                     { name: "Save (Solend)",      url: "https://save.finance",                     category: "lending" },
+  kamino:                     { name: "Kamino Finance",     url: "https://app.kamino.finance/lending",       category: "lending" },
+  marginfi:                   { name: "MarginFi",           url: "https://app.marginfi.com",                 category: "lending" },
+  drift:                      { name: "Drift Protocol",     url: "https://app.drift.trade/earn",             category: "lending" },
+  mango:                      { name: "Mango Markets",      url: "https://app.mango.markets",                category: "lending" },
+  solend:                     { name: "Solend",             url: "https://solend.fi/dashboard",              category: "lending" },
+
+  // ── DEX / AMM ──
+  "raydium-amm":              { name: "Raydium",            url: "https://raydium.io/liquidity/",            category: "dex" },
+  "raydium-clmm":             { name: "Raydium CLMM",       url: "https://raydium.io/clmm/",                 category: "dex" },
+  "orca-dex":                 { name: "Orca",               url: "https://www.orca.so/pools",                category: "dex" },
+  "meteora-dlmm":             { name: "Meteora DLMM",       url: "https://app.meteora.ag/dlmm",              category: "dex" },
+  "meteora-pools":            { name: "Meteora",            url: "https://app.meteora.ag/pools",             category: "dex" },
+  "lifinity-v2":              { name: "Lifinity",           url: "https://lifinity.io/swap",                 category: "dex" },
+  raydium:                    { name: "Raydium",            url: "https://raydium.io/liquidity/",            category: "dex" },
+  orca:                       { name: "Orca",               url: "https://www.orca.so/pools",                category: "dex" },
+  meteora:                    { name: "Meteora",            url: "https://app.meteora.ag",                   category: "dex" },
+  jupiter:                    { name: "Jupiter",            url: "https://jup.ag",                           category: "aggregator" },
 };
 
 export const LST_MINTS: string[] = [
